@@ -5,7 +5,7 @@ name: Update setlists from Google Sheet
 on:
   schedule:
     - cron: "0 9 * * *"      # 09:00 UTC — about 5am Eastern
-  workflow_dispatch:
+  workflow_dispatch:xw
 
 permissions:
   contents: write
