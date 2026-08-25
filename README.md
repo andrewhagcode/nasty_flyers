@@ -35,14 +35,27 @@ lightbox shows the same picture).
 `<a class="dl" …>` blocks in the `#downloads` section and edit the path, name
 and size. Rebuild `nasty-flyers-press-kit.zip` if you want it in the bundle.
 
-**Setlists** — don't edit these in HTML. Add a new tab to the setlist
-spreadsheet, name it `Venue M/D/YY` (add a city if you like:
-`Venue, City M/D/YY`), and put one song per row in column A. A blank row
-starts a new set; the last short section becomes the encore automatically.
-Write segues exactly as you would by hand — `Tweezer >` or `Ghost ->`.
+**Setlists** — don't edit these in HTML. They come from one tab of the
+setlist spreadsheet, one song per row, with columns:
+
+| Date | Venue | City | Set | Song |
+|------|-------|------|-----|------|
+| 2025-11-22 | Three Heads Brewing | Rochester, NY | Set I | Ocelot |
+
+Repeat Date/Venue/City/Set down each set (select the four cells and drag the
+fill handle), then type the songs. `Set` accepts `Set I`/`Set 1`/`Encore`.
+Write segues as you would by hand — `Tweezer >` at the end of a row, or
+`Lawn Boy > Hold Your Head Up` in one cell. Rows need not be in date order;
+the site always sorts newest first.
+
+Keep everything on the FIRST tab — the script reads that one via the
+published CSV link. The sheet must stay published: File > Share > Publish
+to web > Entire document.
+
 A nightly GitHub Action rebuilds the archive. To publish immediately, open
 the **Actions** tab, pick *Update setlists from Google Sheet*, and press
-**Run workflow**.
+**Run workflow**. Every run saves what it fetched as a `sheet-debug`
+artifact, which is the first thing to check if something looks wrong.
 
 **Text** — bio, lineup and contact details are plain HTML in `index.html`.
 

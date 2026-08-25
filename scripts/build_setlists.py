@@ -4,190 +4,187 @@ Rebuild the setlist archive in index.html from the band's Google Sheet.
 
 Spreadsheet convention
 ----------------------
-  * One tab per show.
-  * Tab name  = "<Venue> <M>/<D>/<YY>"   e.g. "Three Heads Brewing 11/22/25"
-                or "<Venue>, <City> <M>/<D>/<YY>" to show a city.
-  * Column A  = one song per row, in order.
-  * A BLANK ROW starts a new set (two blanks is fine - a run counts as one).
-  * Sets are labelled Set I, Set II, ...; a short final section becomes the
-    Encore. Override by putting a row containing just "Set 1" / "Encore".
-  * Segues: write ">" or "->" exactly as you would by hand.
+ONE tab, one song per row, with these columns (order doesn't matter, the
+header names are what count):
+
+    Date        2025-11-22   — repeated on every row of that show
+    Venue       Three Heads Brewing
+    City        Rochester, NY   — optional
+    Set         Set I | Set II | Set III | Encore
+    Song        one song, in the order played
+
+Segues: write them as you would by hand — put ">" or "->" at the end of the
+song it flows out of ("Tweezer >"), or put both songs in one cell
+("Lawn Boy > Hold Your Head Up"). Either way the site prints them in pink.
+
+The sheet must stay published: File > Share > Publish to web.
 
 Usage
 -----
-  python3 scripts/build_setlists.py              # pull from the live sheet
-  python3 scripts/build_setlists.py --local DIR  # parse .csv files in DIR
-  python3 scripts/build_setlists.py --debug      # verbose fetch diagnostics
+  python3 scripts/build_setlists.py                  # pull from the live sheet
+  python3 scripts/build_setlists.py --local FILE.csv # parse a local export
+  python3 scripts/build_setlists.py --debug          # verbose
 """
 
 import argparse, csv, html, io, os, re, sys, urllib.request, urllib.error
-from datetime import date
+from datetime import date, datetime
 
 PUB_ID = ("2PACX-1vST7H40jW8Xxfr6AZueb6Sa_WayMFtmHGip1m6vQRytnw5RyH0"
           "Jh31ohnhe_xHH14InlPJXAvqYFTpE")
-BASE = "https://docs.google.com/spreadsheets/d/e/%s" % PUB_ID
-PUBHTML = BASE + "/pubhtml"
-SHEETCSV = BASE + "/pub?gid=%s&single=true&output=csv"
+CSV_URL = ("https://docs.google.com/spreadsheets/d/e/%s/pub?output=csv" % PUB_ID)
 
 START, END = "<!-- SETLISTS:START -->", "<!-- SETLISTS:END -->"
 MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
-LABEL_RE = re.compile(r'^(set\s*[ivx0-9]+|encore\s*\d*|e\d?)$', re.I)
-DATE_RE  = re.compile(r'^(?P<venue>.*?)[\s_-]*'
-                      r'(?P<m>\d{1,2})[/_\s.-](?P<d>\d{1,2})[/_\s.-](?P<y>\d{2,4})\s*$')
 DEBUG = False
+
+# header name -> which field, tolerant of casing, spaces and simple synonyms
+FIELDS = {
+    "date": "date", "show date": "date",
+    "venue": "venue", "location": "venue",
+    "city": "city", "town": "city", "city, state": "city",
+    "set": "set", "set name": "set", "setname": "set",
+    "song": "song", "songs": "song", "title": "song", "track": "song",
+}
+DATE_FORMATS = ["%Y-%m-%d", "%m/%d/%Y", "%m/%d/%y", "%Y/%m/%d",
+                "%d/%m/%Y", "%b %d, %Y", "%B %d, %Y", "%m-%d-%Y", "%m-%d-%y"]
 
 
 def log(*a):
     print(*a, flush=True)
 
 
-def get(url):
-    req = urllib.request.Request(url, headers={
+def fetch_csv():
+    req = urllib.request.Request(CSV_URL, headers={
         "User-Agent": "Mozilla/5.0 (compatible; nasty-flyers-site/1.0)",
-        "Accept": "text/html,text/csv,*/*",
+        "Accept": "text/csv,*/*",
     })
-    with urllib.request.urlopen(req, timeout=60) as r:
-        body = r.read().decode("utf-8", "replace")
-    if DEBUG:
-        log("      fetched %d bytes" % len(body))
+    log("  fetching %s" % CSV_URL)
+    try:
+        with urllib.request.urlopen(req, timeout=60) as r:
+            body = r.read().decode("utf-8-sig", "replace")
+            log("  got %d bytes (HTTP %s)" % (len(body), r.status))
+    except urllib.error.HTTPError as e:
+        body = e.read().decode("utf-8", "replace")
+        log("  !! HTTP %s — is the sheet still published to the web?" % e.code)
+        log("     File > Share > Publish to web > Entire document > Publish")
+        save_debug(body, "HTTP %s body" % e.code)
+        sys.exit(1)
+    except Exception as e:
+        log("  !! %s: %s" % (type(e).__name__, e))
+        sys.exit(1)
+
+    if body.lstrip()[:1] == "<":
+        log("  !! Got HTML back, not CSV — the publish link may have been revoked.")
+        save_debug(body, "unexpected HTML response")
+        sys.exit(1)
+    save_debug(body, "for reference")
     return body
 
 
-def strip_tags(s):
-    s = re.sub(r'<br\s*/?>', ' ', s, flags=re.I)
-    return html.unescape(re.sub(r'<[^>]+>', '', s)).replace('\xa0', ' ').strip()
+def save_debug(text, why):
+    try:
+        with open("debug-sheet.csv", "w", encoding="utf-8") as fh:
+            fh.write(text)
+        log("  wrote debug-sheet.csv (%d bytes) — %s" % (len(text), why))
+    except Exception as e:
+        log("  (could not write debug file: %s)" % e)
 
 
-# ---------------------------------------------------------------- discovery
-def find_tab_names(page):
-    """[(gid, name)] from the sheet-tab menu, trying a few known markups."""
-    pats = [
-        r'<li[^>]*\bid="sheet-button-(\d+)"[^>]*>\s*(?:<a[^>]*>)?\s*([^<]+?)\s*<',
-        r'id="sheet-button-(\d+)"[^>]*>(?:(?!</li>).)*?>([^<]+?)<',
-        r'href="[^"]*#gid=(\d+)"[^>]*>\s*([^<]+?)\s*<',
-    ]
-    for i, p in enumerate(pats):
-        found = re.findall(p, page, re.S)
-        if found:
-            if DEBUG:
-                log("      tab names via pattern %d: %d found" % (i + 1, len(found)))
-            out, seen = [], set()
-            for gid, name in found:
-                name = html.unescape(name).strip()
-                if gid not in seen and name:
-                    seen.add(gid)
-                    out.append((gid, name))
-            return out
-    return []
+def map_columns(header):
+    """Header row -> {field: column index}."""
+    cols = {}
+    for i, name in enumerate(header):
+        key = re.sub(r'\s+', ' ', (name or "").strip().lower())
+        if key in FIELDS and FIELDS[key] not in cols:
+            cols[FIELDS[key]] = i
+    return cols
 
 
-def tables_from_pubhtml(page):
-    """{gid: [rows]} parsed straight out of the published page."""
-    out = {}
-    blocks = re.split(r'<div[^>]*\bid="(\d+)"', page)
-    for i in range(1, len(blocks), 2):
-        gid, chunk = blocks[i], blocks[i + 1]
-        m = re.search(r'<table.*?</table>', chunk, re.S)
-        if not m:
-            continue
-        rows = []
-        for tr in re.findall(r'<tr[^>]*>(.*?)</tr>', m.group(0), re.S):
-            cells = re.findall(r'<td[^>]*>(.*?)</td>', tr, re.S)
-            rows.append([strip_tags(cells[0])] if cells else [""])
-        if rows:
-            out[gid] = rows
-    return out
+def parse_date(raw):
+    raw = (raw or "").strip()
+    if not raw:
+        return None
+    for fmt in DATE_FORMATS:
+        try:
+            return datetime.strptime(raw, fmt).date()
+        except ValueError:
+            pass
+    m = re.match(r'^(\d{1,2})[/.-](\d{1,2})[/.-](\d{2,4})$', raw)
+    if m:
+        mo, dy, yr = (int(x) for x in m.groups())
+        yr += 2000 if yr < 100 else 0
+        try:
+            return date(yr, mo, dy)
+        except ValueError:
+            pass
+    return None
 
 
-def load_from_sheet():
-    log("  fetching %s" % PUBHTML)
-    page = get(PUBHTML)
-    log("  published page: %d bytes" % len(page))
+def tidy_set(raw):
+    s = re.sub(r'\s+', ' ', (raw or "").strip())
+    if not s:
+        return "Set I"
+    m = re.match(r'^(encore|enc|e)\b\s*(.*)$', s, re.I)
+    if m:
+        return ("Encore %s" % m.group(2).strip()).strip()
+    m = re.match(r'^set\s*([ivx]+|\d+)$', s, re.I)
+    if m:
+        tok = m.group(1)
+        if tok.isdigit():
+            n = int(tok)
+            return "Set %s" % ("I" * n if n <= 3 else n)
+        return "Set %s" % tok.upper()
+    return s
 
-    tabs = find_tab_names(page)
-    log("  tabs found: %d" % len(tabs))
-    if not tabs:
-        log("")
-        log("  !! Could not read the tab list.")
-        log("     Check: File > Share > Publish to web > Entire document > Publish.")
-        log("")
-        log("----- first 1500 chars of what came back -----")
-        log(page[:1500])
+
+def read_rows(text):
+    rows = list(csv.reader(io.StringIO(text)))
+    rows = [r for r in rows if any((c or "").strip() for c in r)]
+    if not rows:
+        sys.exit("  !! The sheet is empty.")
+    cols = map_columns(rows[0])
+    if DEBUG:
+        log("  header: %s" % rows[0])
+        log("  columns matched: %s" % cols)
+    missing = [f for f in ("date", "venue", "set", "song") if f not in cols]
+    if missing:
+        log("  !! Missing column(s): %s" % ", ".join(missing))
+        log("     Found header: %s" % rows[0])
+        log("     Expected: Date, Venue, City, Set, Song")
         sys.exit(1)
 
-    embedded = tables_from_pubhtml(page)
-    if DEBUG:
-        log("      tables embedded in the page: %d" % len(embedded))
+    def cell(row, field):
+        i = cols.get(field, -1)
+        return (row[i].strip() if 0 <= i < len(row) and row[i] else "")
 
-    shows = []
-    for gid, name in tabs:
-        rows = embedded.get(gid)
-        source = "page"
-        if not rows:
-            try:
-                rows = list(csv.reader(io.StringIO(get(SHEETCSV % gid))))
-                source = "csv"
-            except urllib.error.HTTPError as e:
-                log("  !! %-38s skipped (HTTP %s)" % (name, e.code))
-                continue
-        d, venue, city = parse_title(name)
-        sections = parse_rows(rows)
-        songs = sum(len(s[1]) for s in sections)
-        log("  parsed %-38s %-11s %d sets, %d songs (%s)"
-            % (name, str(d) if d else "no date", len(sections), songs, source))
-        if songs:
-            shows.append((d, venue, city, sections))
-    return shows
-
-
-# ------------------------------------------------------------------ parsing
-def parse_rows(rows):
-    sections, cur, explicit = [], [], {}
-    for raw in rows:
-        cell = (raw[0].strip() if raw and raw[0] else "")
-        if not cell:
-            if cur:
-                sections.append(cur)
-                cur = []
+    shows, order, skipped = {}, [], 0
+    for row in rows[1:]:
+        song = cell(row, "song")
+        if not song:
             continue
-        if LABEL_RE.match(cell):
-            if cur:
-                sections.append(cur)
-                cur = []
-            explicit[len(sections)] = cell
+        d = parse_date(cell(row, "date"))
+        if d is None:
+            skipped += 1
+            if skipped <= 3:
+                log("  !! skipping row with unreadable date: %r" % (row[:5],))
             continue
-        cur.append(cell)
-    if cur:
-        sections.append(cur)
+        key = (d, cell(row, "venue"), cell(row, "city"))
+        if key not in shows:
+            shows[key] = {}
+            order.append(key)
+        label = tidy_set(cell(row, "set"))
+        shows[key].setdefault(label, []).append(song)
+    if skipped:
+        log("  !! %d row(s) skipped for an unreadable date" % skipped)
 
-    out, setno = [], 0
-    for i, songs in enumerate(sections):
-        if i in explicit:
-            label = explicit[i]
-        elif i == len(sections) - 1 and len(sections) > 1 and len(songs) <= 3:
-            label = "Encore"
-        else:
-            setno += 1
-            label = "Set %s" % ("I" * setno if setno <= 3 else setno)
-        out.append((label, songs))
+    out = []
+    for key in order:
+        d, venue, city = key
+        sections = list(shows[key].items())
+        out.append((d, venue, city, sections))
+        log("  %s  %-22s %d set(s), %d song(s)"
+            % (d, venue, len(sections), sum(len(s) for _, s in sections)))
     return out
-
-
-def parse_title(name):
-    m = DATE_RE.match(name.strip())
-    if not m:
-        return None, name.strip(), ""
-    y = int(m.group("y"))
-    y += 2000 if y < 100 else 0
-    try:
-        d = date(y, int(m.group("m")), int(m.group("d")))
-    except ValueError:
-        return None, name.strip(), ""
-    venue = m.group("venue").replace("_", " ").strip(" ,-")
-    city = ""
-    if "," in venue:
-        venue, city = [p.strip() for p in venue.split(",", 1)]
-    return d, venue, city
 
 
 # ----------------------------------------------------------------- rendering
@@ -212,7 +209,7 @@ def render_songs(songs):
 
 
 def render_show(d, venue, city, sections, is_first):
-    when = "%s %d, %d" % (MONTHS[d.month - 1], d.day, d.year) if d else ""
+    when = "%s %d, %d" % (MONTHS[d.month - 1], d.day, d.year)
     where = html.escape(venue) + (" &middot; " + html.escape(city) if city else "")
     sets = "\n".join(
         '        <div class="set"><span class="set-label">%s</span>'
@@ -227,15 +224,14 @@ def render_show(d, venue, city, sections, is_first):
 
 
 def build(shows):
-    shows.sort(key=lambda s: (s[0] is not None, s[0] or date.min), reverse=True)
+    shows.sort(key=lambda s: s[0], reverse=True)
     if not shows:
         return '      <p class="dim">Setlists are on their way.</p>'
     out, year = [], object()
     for i, (d, venue, city, sections) in enumerate(shows):
-        y = d.year if d else None
-        if y != year:
-            year = y
-            out.append('      <p class="setlist-year">%s</p>' % (y or "Undated"))
+        if d.year != year:
+            year = d.year
+            out.append('      <p class="setlist-year">%d</p>' % year)
         out.append(render_show(d, venue, city, sections, i == 0))
     return "\n".join(out)
 
@@ -243,34 +239,27 @@ def build(shows):
 def main():
     global DEBUG
     ap = argparse.ArgumentParser()
-    ap.add_argument("--local", help="directory of exported .csv files")
+    ap.add_argument("--local", help="a .csv export to read instead of the live sheet")
     ap.add_argument("--index", default="index.html")
     ap.add_argument("--debug", action="store_true")
     args = ap.parse_args()
     DEBUG = args.debug
 
     if args.local:
-        shows = []
-        for fn in sorted(os.listdir(args.local)):
-            if not fn.lower().endswith(".csv"):
-                continue
-            name = re.sub(r'^.*Setlists?[_ -]+', '', fn[:-4]).replace("_", " ")
-            with open(os.path.join(args.local, fn), newline="", encoding="utf-8-sig") as fh:
-                rows = list(csv.reader(fh))
-            d, venue, city = parse_title(name)
-            shows.append((d, venue, city, parse_rows(rows)))
-            log("  parsed %-38s %s" % (name, d))
+        text = open(args.local, encoding="utf-8-sig").read()
+        log("  reading %s (%d bytes)" % (args.local, len(text)))
     else:
-        shows = load_from_sheet()
+        text = fetch_csv()
 
+    shows = read_rows(text)
     if not shows:
         log("")
-        log("  !! No setlists parsed - leaving index.html untouched.")
+        log("  !! No setlists parsed — leaving index.html untouched.")
         sys.exit(1)
 
     page = open(args.index, encoding="utf-8").read()
     if START not in page or END not in page:
-        sys.exit("Markers not found in %s" % args.index)
+        sys.exit("  !! Markers not found in %s" % args.index)
     a, b = page.index(START) + len(START), page.index(END)
     new = page[:a] + "\n" + build(shows) + "\n" + page[b:]
     if new == page:
