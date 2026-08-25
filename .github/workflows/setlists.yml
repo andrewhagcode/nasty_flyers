@@ -23,6 +23,15 @@ jobs:
       - name: Rebuild the setlist archive
         run: python3 scripts/build_setlists.py --debug
 
+      - name: Save what Google returned (for debugging)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sheet-debug
+          path: debug-pubhtml.html
+          if-no-files-found: ignore
+          retention-days: 7
+
       - name: Commit if anything changed
         run: |
           if [[ -n "$(git status --porcelain index.html)" ]]; then
