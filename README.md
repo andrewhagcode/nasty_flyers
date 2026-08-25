@@ -35,6 +35,15 @@ lightbox shows the same picture).
 `<a class="dl" …>` blocks in the `#downloads` section and edit the path, name
 and size. Rebuild `nasty-flyers-press-kit.zip` if you want it in the bundle.
 
+**Setlists** — don't edit these in HTML. Add a new tab to the setlist
+spreadsheet, name it `Venue M/D/YY` (add a city if you like:
+`Venue, City M/D/YY`), and put one song per row in column A. A blank row
+starts a new set; the last short section becomes the encore automatically.
+Write segues exactly as you would by hand — `Tweezer >` or `Ghost ->`.
+A nightly GitHub Action rebuilds the archive. To publish immediately, open
+the **Actions** tab, pick *Update setlists from Google Sheet*, and press
+**Run workflow**.
+
 **Text** — bio, lineup and contact details are plain HTML in `index.html`.
 
 ## Notes

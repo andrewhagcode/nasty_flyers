@@ -274,6 +274,39 @@ button,a{-webkit-tap-highlight-color:rgba(63,224,200,.25)}
   text-transform:uppercase;color:var(--paper-dim);margin:18px 0 0}
 .credit b{color:var(--amber);font-weight:400}
 
+/* ============ setlists ============ */
+.setlist-year{font-family:var(--mono);font-size:.66rem;letter-spacing:.28em;
+  text-transform:uppercase;color:var(--aqua);margin:30px 0 12px}
+.setlist-year:first-child{margin-top:0}
+.show{border:1px solid var(--hair);border-radius:14px;background:rgba(14,7,40,.55);
+  margin-bottom:10px;overflow:hidden}
+.show summary{list-style:none;cursor:pointer;display:flex;align-items:baseline;
+  gap:16px;padding:16px 52px 16px 20px;position:relative;
+  transition:background .2s ease}
+.show summary::-webkit-details-marker{display:none}
+.show summary:hover{background:rgba(255,197,61,.06)}
+.show summary::after{content:"+";position:absolute;right:20px;top:50%;
+  transform:translateY(-50%);font-family:var(--mono);font-size:1.1rem;
+  color:var(--amber);transition:transform .25s ease}
+.show[open] summary::after{content:"\2212"}
+.show[open] summary{border-bottom:1px solid var(--hair)}
+.show-when{font-family:var(--mono);font-size:.68rem;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--amber);flex:0 0 auto;min-width:104px}
+.show-where{font-family:var(--display);font-weight:400;font-size:1.06rem;
+  line-height:1.2}
+.set{padding:16px 20px 4px}
+.set:last-child{padding-bottom:20px}
+.set-label{display:block;font-family:var(--mono);font-size:.6rem;letter-spacing:.24em;
+  text-transform:uppercase;color:var(--paper-dim);margin-bottom:6px}
+.songs{margin:0;font-size:1rem;line-height:1.75}
+.songs .sg{font-style:normal;color:var(--flare);font-weight:700;padding:0 1px}
+@media(max-width:680px){
+  .show summary{flex-direction:column;gap:4px;padding:14px 46px 14px 16px}
+  .show-when{min-width:0}
+  .set{padding:14px 16px 4px}
+  .songs{font-size:.95rem}
+}
+
 /* ============ video ============ */
 .videos{display:grid;grid-template-columns:1fr 1fr;gap:20px}
 .vid-wrap{display:flex;flex-direction:column;gap:10px}
@@ -296,6 +329,8 @@ button,a{-webkit-tap-highlight-color:rgba(63,224,200,.25)}
 .vid-cap{position:absolute;z-index:2;left:0;right:0;bottom:0;padding:34px 18px 14px;
   font-family:var(--mono);font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;
   text-align:left;color:var(--paper);pointer-events:none}
+.vid-title{font-family:var(--display);font-weight:400;font-size:1.12rem;
+  line-height:1.2;margin:2px 0 0}
 .vid-alt{font-family:var(--mono);font-size:.66rem;letter-spacing:.16em;
   text-transform:uppercase;color:var(--paper-dim);margin:0;padding-left:2px}
 .vid-alt a{color:var(--amber);text-decoration:none}
@@ -309,6 +344,10 @@ button,a{-webkit-tap-highlight-color:rgba(63,224,200,.25)}
   background:linear-gradient(120deg,rgba(255,46,136,.5),rgba(255,197,61,.35),rgba(63,224,200,.5));
   -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
   -webkit-mask-composite:xor;mask-composite:exclude}
+.bit-fallback{margin:0;font-size:1rem;color:var(--paper)}
+.bit-fallback a{color:var(--amber)}
+.shows-note a{color:var(--amber);text-decoration:none}
+.shows-note a:hover{text-decoration:underline}
 .shows-note{font-family:var(--mono);font-size:.7rem;letter-spacing:.14em;
   text-transform:uppercase;color:var(--paper-dim);margin:18px 0 0}
 
@@ -357,19 +396,30 @@ html:not(.js) .body-copy{-webkit-user-select:all;user-select:all}
 .dl-note{font-size:.9rem;color:var(--paper-dim);margin:12px 0 0;max-width:62ch}
 .dl-sub{font-family:var(--mono);font-size:.62rem;letter-spacing:.22em;
   text-transform:uppercase;color:var(--aqua);margin:26px 0 12px}
-.dl-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.dl{display:flex;flex-direction:column;gap:3px;padding:14px 16px;border-radius:12px;
-  border:1px solid var(--hair);background:rgba(14,7,40,.55);text-decoration:none;
+.dl-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.dl{display:block;border-radius:12px;overflow:hidden;border:1px solid var(--hair);
+  background:rgba(14,7,40,.55);text-decoration:none;
   transition:border-color .2s,background .2s,transform .2s}
-.dl:hover{border-color:var(--amber);background:rgba(255,197,61,.07);transform:translateY(-2px)}
-.dl-name{font-weight:600;font-size:.95rem}
-.dl-meta{font-family:var(--mono);font-size:.62rem;letter-spacing:.12em;
-  text-transform:uppercase;color:var(--paper-dim)}
-.dl-go{font-family:var(--mono);font-size:.62rem;letter-spacing:.18em;
-  text-transform:uppercase;color:var(--amber);margin-top:6px}
-@media(max-width:980px){.dl-grid{grid-template-columns:repeat(2,1fr)}}
+.dl:hover{border-color:var(--amber);background:rgba(255,197,61,.07);transform:translateY(-3px)}
+.dl-thumb{display:block;position:relative;aspect-ratio:1/1;background:var(--ink)}
+.dl-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.dl-thumb::after{content:"\2193";position:absolute;right:8px;bottom:8px;
+  width:26px;height:26px;border-radius:50%;display:grid;place-items:center;
+  background:rgba(8,4,23,.72);color:var(--amber);font-size:.8rem;
+  border:1px solid var(--hair)}
+.dl:hover .dl-thumb::after{background:var(--amber);color:var(--void)}
+.dl-body{display:block;padding:11px 13px 13px}
+.dl-name{display:block;font-weight:600;font-size:.9rem;line-height:1.25}
+.dl-meta{display:block;font-family:var(--mono);font-size:.58rem;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--paper-dim);margin-top:4px}
+@media(max-width:1080px){
+  .nav-links a{padding:9px 8px;font-size:.66rem;letter-spacing:.12em}
+}
+@media(max-width:980px){.dl-grid{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:680px){
-  .dl-grid{grid-template-columns:1fr}
+  .dl-grid{grid-template-columns:repeat(2,1fr);gap:10px}
+  .dl-body{padding:9px 10px 11px}
+  .dl-name{font-size:.82rem}
   .dl-head .btn{margin-left:0;flex:1 1 100%;justify-content:center}
 }
 
@@ -468,6 +518,9 @@ html:not(.js) .body-copy{-webkit-user-select:all;user-select:all}
 @keyframes rvSafety{to{opacity:1;transform:none}}
 
 /* ============ responsive ============ */
+@media(max-width:1080px){
+  .nav-links a{padding:9px 8px;font-size:.66rem;letter-spacing:.12em}
+}
 @media(max-width:980px){
   .lineup{grid-template-columns:1fr 1fr}
   .kit{grid-template-columns:1fr 1fr}
@@ -619,6 +672,7 @@ try{
       <a href="#bio">Bio</a>
       <a href="#lineup">Lineup</a>
       <a href="#shows">Shows</a>
+      <a href="#setlists">Setlists</a>
       <a href="#watch">Watch</a>
       <a href="#live">Photos</a>
       <a href="#epk">Press Kit</a>
@@ -749,7 +803,7 @@ try{
     </div>
     <div class="shows-frame rv">
       <a class="bit-widget-initializer"
-         data-artist-name="The Nasty Flyers"
+         data-artist-name="id_15661084"
          data-display-local-dates="false"
          data-display-past-dates="false"
          data-auto-style="false"
@@ -765,9 +819,62 @@ try{
          data-display-play-my-city="false"
          data-display-share-button="false"></a>
       <script charset="utf-8" src="https://widgetv3.bandsintown.com/main.min.js" async></script>
+      <noscript>
+        <p class="bit-fallback">Our live calendar loads from Bandsintown.
+          <a href="https://www.bandsintown.com/a/15661084" target="_blank" rel="noopener">View
+          all upcoming dates &#8599;</a></p>
+      </noscript>
     </div>
     <p class="shows-note">Dates update automatically from Bandsintown &middot;
+      <a href="https://www.bandsintown.com/a/15661084" target="_blank" rel="noopener">See all
+      dates &amp; get alerts &#8599;</a> &middot;
       Booking? <a href="#book">Get in touch</a></p>
+  </div>
+</section>
+
+<!-- ========== SETLISTS ========== -->
+<section class="sec" id="setlists">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <p class="eyebrow">The archive</p>
+      <h2 class="h2">Every set,<br>as it happened</h2>
+      <hr class="fountain">
+    </div>
+    <div class="setlists rv">
+      <!-- Generated from the band's Google Sheet by scripts/build_setlists.py.
+           Do not hand-edit between these markers; edit the spreadsheet instead. -->
+      <!-- SETLISTS:START -->
+      <p class="setlist-year">2026</p>
+      <details class="show" open>
+        <summary>
+          <span class="show-when">Aug 20, 2026</span>
+          <span class="show-where">Birdhouse Brewing</span>
+        </summary>
+        <div class="set"><span class="set-label">Set I</span><p class="songs">Tweezer <i class="sg">&gt;</i> Run Like an Antelope <i class="sg">&gt;</i> Tweezer <i class="sg">&gt;</i> My Friend, My Friend <i class="sg">&gt;</i> Tweezer <i class="sg">&gt;</i> Sample in a Jar, Weigh, Rift</p></div>
+        <div class="set"><span class="set-label">Set II</span><p class="songs">Axilla II, Birds of a Feather <i class="sg">&gt;</i> Tweezer <i class="sg">&gt;</i> Possum <i class="sg">&gt;</i> Tweezer <i class="sg">&gt;</i> Birds of a Feather, Reba, Free <i class="sg">&gt;</i> Tweezer Reprise</p></div>
+        <div class="set"><span class="set-label">Encore</span><p class="songs">Fuego</p></div>
+      </details>
+      <p class="setlist-year">2025</p>
+      <details class="show">
+        <summary>
+          <span class="show-when">Nov 22, 2025</span>
+          <span class="show-where">Three Heads Brewing</span>
+        </summary>
+        <div class="set"><span class="set-label">Set I</span><p class="songs">No Men in No Man&#x27;s Land, The Wedge, Ocelot, Limb by Limb, Scents and Subtle Sounds, Squirming Coil</p></div>
+        <div class="set"><span class="set-label">Set II</span><p class="songs">Lawn Boy &gt; Hold Your Head Up, Bouncing Around the Room, NICU, Stash, Reba, Fast Enough for You, Run Like an Antelope</p></div>
+        <div class="set"><span class="set-label">Encore</span><p class="songs">Rocky Top, Carini</p></div>
+      </details>
+      <details class="show">
+        <summary>
+          <span class="show-when">May 16, 2025</span>
+          <span class="show-where">Three Heads Brewing</span>
+        </summary>
+        <div class="set"><span class="set-label">Set I</span><p class="songs">Slave to the Traffic Light, Golgi Apparatus, Ya Mar, Horn, Waves, Rift, Timber, Gumbo</p></div>
+        <div class="set"><span class="set-label">Set II</span><p class="songs">Llama, Steam <i class="sg">&gt;</i> Scents and Subtle Sounds <i class="sg">&gt;</i> Ghost <i class="sg">&gt;</i> 2001 <i class="sg">&gt;</i> Chalk Dust Torture</p></div>
+        <div class="set"><span class="set-label">Encore</span><p class="songs">Meatstick, Crosseyed and Painless</p></div>
+      </details>
+<!-- SETLISTS:END -->
+    </div>
   </div>
 </section>
 
@@ -785,20 +892,22 @@ try{
                 aria-label="Play the first live video">
           <img src="images/hero.jpg" alt="The Nasty Flyers performing live" width="1700" height="1133" loading="lazy" decoding="async">
           <span class="play" aria-hidden="true"><span>&#9654;</span></span>
-          <span class="vid-cap">Live set &middot; picks up at 5:02</span>
+          <span class="vid-cap">Picks up at 5:02</span>
         </button>
+        <h3 class="vid-title">The Nasty Flyers live at Three Heads Brewing 2/4/23 &mdash; &lsquo;Maze&rsquo;</h3>
         <p class="vid-alt"><a href="https://www.youtube.com/watch?v=mbgH6495GLg&amp;t=302s"
-           target="_blank" rel="noopener">Open on YouTube &#8599;</a></p>
+           target="_blank" rel="noopener">Watch on YouTube &#8599;</a></p>
       </div>
       <div class="vid-wrap rv">
         <button class="vid p2" data-yt="IP2av4jDykw"
                 aria-label="Play the second live video">
           <img src="images/video-poster-2.jpg" alt="The Nasty Flyers on stage" width="733" height="1100" loading="lazy" decoding="async">
           <span class="play" aria-hidden="true"><span>&#9654;</span></span>
-          <span class="vid-cap">Live set</span>
+          <span class="vid-cap">Full performance</span>
         </button>
+        <h3 class="vid-title">The Nasty Flyers live at Three Heads Brewing pt.2 &mdash; &lsquo;Gotta Jibboo&rsquo;</h3>
         <p class="vid-alt"><a href="https://youtu.be/IP2av4jDykw"
-           target="_blank" rel="noopener">Open on YouTube &#8599;</a></p>
+           target="_blank" rel="noopener">Watch on YouTube &#8599;</a></p>
       </div>
     </div>
   </div>
@@ -843,12 +952,6 @@ try{
           Rochester, New York, here to chase the jam wherever it wants to go.</p>
         <button class="copy-btn" data-copy="#bio-one">Copy one-liner</button>
         <p class="copy-hint">Tap the text to select it</p>
-      </div>
-
-      <div class="kit-card rv">
-        <span class="tag">Quick facts</span>
-        <p class="body-copy"><b>Rochester, NY</b><br>Four-piece &middot; Phish tribute<br>
-          Improv-forward, no two sets alike</p>
       </div>
 
       <div class="kit-card wide rv">
@@ -913,83 +1016,113 @@ try{
       <p class="dl-sub">Photos</p>
       <div class="dl-grid">
         <a class="dl" href="press/band-photo-main.jpg" download>
-          <span class="dl-name">Main press photo</span>
-          <span class="dl-meta">Square, logo locked up &middot; 283 KB</span>
-          <span class="dl-go">Download</span>
+          <span class="dl-thumb"><img src="images/thumbs/band-photo-main.jpg" alt="Main press photo" width="400" height="400" loading="lazy" decoding="async"></span>
+          <span class="dl-body">
+            <span class="dl-name">Main press photo</span>
+            <span class="dl-meta">Square, logo locked up &middot; 283 KB</span>
+          </span>
         </a>
         <a class="dl" href="press/band-candid-1.jpg" download>
-          <span class="dl-name">Band candid 1</span>
-          <span class="dl-meta">Four-piece, horizontal &middot; 615 KB</span>
-          <span class="dl-go">Download</span>
+          <span class="dl-thumb"><img src="images/thumbs/band-candid-1.jpg" alt="Band candid 1" width="400" height="400" loading="lazy" decoding="async"></span>
+          <span class="dl-body">
+            <span class="dl-name">Band candid 1</span>
+            <span class="dl-meta">Four-piece, horizontal &middot; 615 KB</span>
+          </span>
         </a>
         <a class="dl" href="press/band-candid-2.jpg" download>
-          <span class="dl-name">Band candid 2</span>
-          <span class="dl-meta">Four-piece, horizontal &middot; 927 KB</span>
-          <span class="dl-go">Download</span>
+          <span class="dl-thumb"><img src="images/thumbs/band-candid-2.jpg" alt="Band candid 2" width="400" height="400" loading="lazy" decoding="async"></span>
+          <span class="dl-body">
+            <span class="dl-name">Band candid 2</span>
+            <span class="dl-meta">Four-piece, horizontal &middot; 927 KB</span>
+          </span>
         </a>
         <a class="dl" href="press/live-01-full-band.jpg" download>
-          <span class="dl-name">Live: full band</span>
-          <span class="dl-meta">From the crowd &middot; 752 KB</span>
-          <span class="dl-go">Download</span>
+          <span class="dl-thumb"><img src="images/thumbs/live-01-full-band.jpg" alt="Full band" width="400" height="400" loading="lazy" decoding="async"></span>
+          <span class="dl-body">
+            <span class="dl-name">Full band</span>
+            <span class="dl-meta">From the crowd &middot; 752 KB</span>
+          </span>
         </a>
         <a class="dl" href="press/live-02-lou-chitty.jpg" download>
-          <span class="dl-name">Live: Lou &amp; Miles</span>
-          <span class="dl-meta">Black and white &middot; 274 KB</span>
-          <span class="dl-go">Download</span>
+          <span class="dl-thumb"><img src="images/thumbs/live-02-lou-chitty.jpg" alt="Lou  Miles" width="400" height="400" loading="lazy" decoding="async"></span>
+          <span class="dl-body">
+            <span class="dl-name">Lou &amp; Miles</span>
+            <span class="dl-meta">Black and white &middot; 274 KB</span>
+          </span>
         </a>
         <a class="dl" href="press/live-03-miles-and-chris.jpg" download>
-          <span class="dl-name">Live: Miles &amp; Chris</span>
-          <span class="dl-meta">Green wash &middot; 804 KB</span>
-          <span class="dl-go">Download</span>
+          <span class="dl-thumb"><img src="images/thumbs/live-03-miles-and-chris.jpg" alt="Miles  Chris" width="400" height="400" loading="lazy" decoding="async"></span>
+          <span class="dl-body">
+            <span class="dl-name">Miles &amp; Chris</span>
+            <span class="dl-meta">Green wash &middot; 804 KB</span>
+          </span>
         </a>
         <a class="dl" href="press/live-04-tommy-mintel.jpg" download>
-          <span class="dl-name">Live: Tommy Mintel</span>
-          <span class="dl-meta">Behind the kit &middot; 708 KB</span>
-          <span class="dl-go">Download</span>
+          <span class="dl-thumb"><img src="images/thumbs/live-04-tommy-mintel.jpg" alt="Tommy Mintel" width="400" height="400" loading="lazy" decoding="async"></span>
+          <span class="dl-body">
+            <span class="dl-name">Tommy Mintel</span>
+            <span class="dl-meta">Behind the kit &middot; 708 KB</span>
+          </span>
         </a>
         <a class="dl" href="press/live-05-lou-chitty.jpg" download>
-          <span class="dl-name">Live: Lou Chitty</span>
-          <span class="dl-meta">Keys, facing the room &middot; 437 KB</span>
-          <span class="dl-go">Download</span>
+          <span class="dl-thumb"><img src="images/thumbs/live-05-lou-chitty.jpg" alt="Lou Chitty" width="400" height="400" loading="lazy" decoding="async"></span>
+          <span class="dl-body">
+            <span class="dl-name">Lou Chitty</span>
+            <span class="dl-meta">Keys, facing the room &middot; 437 KB</span>
+          </span>
         </a>
         <a class="dl" href="press/live-06-tommy-and-chris.jpg" download>
-          <span class="dl-name">Live: Tommy &amp; Chris</span>
-          <span class="dl-meta">Black and white &middot; 621 KB</span>
-          <span class="dl-go">Download</span>
+          <span class="dl-thumb"><img src="images/thumbs/live-06-tommy-and-chris.jpg" alt="Tommy  Chris" width="400" height="400" loading="lazy" decoding="async"></span>
+          <span class="dl-body">
+            <span class="dl-name">Tommy &amp; Chris</span>
+            <span class="dl-meta">Black and white &middot; 621 KB</span>
+          </span>
         </a>
         <a class="dl" href="press/live-07-miles-mchugh.jpg" download>
-          <span class="dl-name">Live: Miles McHugh</span>
-          <span class="dl-meta">Guitar, blue light &middot; 576 KB</span>
-          <span class="dl-go">Download</span>
+          <span class="dl-thumb"><img src="images/thumbs/live-07-miles-mchugh.jpg" alt="Miles McHugh" width="400" height="400" loading="lazy" decoding="async"></span>
+          <span class="dl-body">
+            <span class="dl-name">Miles McHugh</span>
+            <span class="dl-meta">Guitar, blue light &middot; 576 KB</span>
+          </span>
         </a>
         <a class="dl" href="press/live-08-chris-meeker.jpg" download>
-          <span class="dl-name">Live: Chris Meeker</span>
-          <span class="dl-meta">Bass &middot; 539 KB</span>
-          <span class="dl-go">Download</span>
+          <span class="dl-thumb"><img src="images/thumbs/live-08-chris-meeker.jpg" alt="Chris Meeker" width="400" height="400" loading="lazy" decoding="async"></span>
+          <span class="dl-body">
+            <span class="dl-name">Chris Meeker</span>
+            <span class="dl-meta">Bass &middot; 539 KB</span>
+          </span>
         </a>
         <a class="dl" href="press/live-09-on-stage.jpg" download>
-          <span class="dl-name">Live: on stage</span>
-          <span class="dl-meta">Wide, green light &middot; 834 KB</span>
-          <span class="dl-go">Download</span>
+          <span class="dl-thumb"><img src="images/thumbs/live-09-on-stage.jpg" alt="On stage" width="400" height="400" loading="lazy" decoding="async"></span>
+          <span class="dl-body">
+            <span class="dl-name">On stage</span>
+            <span class="dl-meta">Wide, green light &middot; 834 KB</span>
+          </span>
         </a>
       </div>
 
       <p class="dl-sub">Logo &amp; technical</p>
       <div class="dl-grid">
         <a class="dl" href="press/nasty-flyers-logo-black.png" download>
-          <span class="dl-name">Logo &mdash; black</span>
-          <span class="dl-meta">Transparent PNG, 2000px &middot; 416 KB</span>
-          <span class="dl-go">Download</span>
+          <span class="dl-thumb"><img src="images/thumbs/nasty-flyers-logo-black.jpg" alt="Logo  black" width="400" height="400" loading="lazy" decoding="async"></span>
+          <span class="dl-body">
+            <span class="dl-name">Logo &mdash; black</span>
+            <span class="dl-meta">Transparent PNG, 2000px &middot; 416 KB</span>
+          </span>
         </a>
         <a class="dl" href="press/nasty-flyers-logo-white.png" download>
-          <span class="dl-name">Logo &mdash; white</span>
-          <span class="dl-meta">For dark backgrounds &middot; 266 KB</span>
-          <span class="dl-go">Download</span>
+          <span class="dl-thumb"><img src="images/thumbs/nasty-flyers-logo-white.jpg" alt="Logo  white" width="400" height="400" loading="lazy" decoding="async"></span>
+          <span class="dl-body">
+            <span class="dl-name">Logo &mdash; white</span>
+            <span class="dl-meta">For dark backgrounds &middot; 266 KB</span>
+          </span>
         </a>
         <a class="dl" href="press/nasty-flyers-stage-plot.png" download>
-          <span class="dl-name">Stage plot</span>
-          <span class="dl-meta">Four-piece, 6 vox &middot; 14 KB</span>
-          <span class="dl-go">Download</span>
+          <span class="dl-thumb"><img src="images/thumbs/nasty-flyers-stage-plot.jpg" alt="Stage plot" width="400" height="400" loading="lazy" decoding="async"></span>
+          <span class="dl-body">
+            <span class="dl-name">Stage plot</span>
+            <span class="dl-meta">Four-piece, 6 vox &middot; 14 KB</span>
+          </span>
         </a>
       </div>
     </div>
