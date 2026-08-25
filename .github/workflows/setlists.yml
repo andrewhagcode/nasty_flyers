@@ -5,7 +5,7 @@ name: Update setlists from Google Sheet
 on:
   schedule:
     - cron: "0 9 * * *"      # 09:00 UTC — about 5am Eastern
-  workflow_dispatch:xw
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -23,12 +23,12 @@ jobs:
       - name: Rebuild the setlist archive
         run: python3 scripts/build_setlists.py --debug
 
-      - name: Save what Google returned (for debugging)
+      - name: Save the fetched sheet (for debugging)
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: sheet-debug
-          path: debug-pubhtml.html
+          path: debug-sheet.csv
           if-no-files-found: ignore
           retention-days: 7
 
