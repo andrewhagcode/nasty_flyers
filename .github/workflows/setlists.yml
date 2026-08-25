@@ -1,0 +1,36 @@
+name: Update setlists from Google Sheet
+
+# Runs every night, and whenever you press "Run workflow" on the Actions tab
+# (use that right after a show if you don't want to wait).
+on:
+  schedule:
+    - cron: "0 9 * * *"      # 09:00 UTC — about 5am Eastern
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  setlists:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Rebuild the setlist archive
+        run: python3 scripts/build_setlists.py
+
+      - name: Commit if anything changed
+        run: |
+          if [[ -n "$(git status --porcelain index.html)" ]]; then
+            git config user.name  "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add index.html
+            git commit -m "Update setlists from spreadsheet"
+            git push
+          else
+            echo "No setlist changes."
+          fi
